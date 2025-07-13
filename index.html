@@ -47,7 +47,7 @@
       box-shadow: 0 8px 24px rgba(0,0,0,.1);
     }
     .card h2 { margin: .2rem 0; font-size: .95rem; color: var(--accent); }
-    input, select, button { 
+    input, select, button {
       width: 100%; padding: .6rem; margin-top: .4rem;
       border-radius: 12px; border: 1px solid #ccc; font-size: .9rem;
     }
@@ -67,7 +67,7 @@
       opacity: .5;
     }
     fieldset { border: none; padding: 0; margin: 0; }
-    @media(max-width:480px){
+    @media(max-width:480px) {
       .card { flex: 1 1 120px; }
     }
   </style>
@@ -78,7 +78,7 @@
     <div id="countdown" class="count">Sin configuración</div>
   </header>
 
-  <!-- RESUMEN PRINCIPAL -->
+  <!-- Resumen principal -->
   <section class="grid" id="mainSummary">
     <div class="card"><h2>Presupuesto plan</h2><span id="sumBudget">$0</span></div>
     <div class="card"><h2>Gastado real</h2><span id="sumSpent">$0</span></div>
@@ -87,7 +87,7 @@
   </section>
   <section class="grid" id="dynamicCards"></section>
 
-  <!-- CONFIGURAR VIAJE -->
+  <!-- Configurar viaje -->
   <details id="configBox" open>
     <summary>🗓️ Configurar viaje</summary>
     <fieldset>
@@ -103,11 +103,13 @@
     </fieldset>
   </details>
 
-  <!-- PLAN ACTIVIDADES -->
+  <!-- Agenda de actividades -->
   <details id="actBlock">
     <summary>📅 Planificación de actividades</summary>
     <table id="actTbl">
-      <thead><tr><th>Día</th><th>Inicio</th><th>Fin</th><th>Categoría</th><th>Descripción</th><th>✔︎</th></tr></thead>
+      <thead>
+        <tr><th>Día</th><th>Inicio</th><th>Fin</th><th>Categoría</th><th>Descripción</th><th>✔︎</th></tr>
+      </thead>
       <tbody></tbody>
     </table>
     <fieldset>
@@ -120,11 +122,13 @@
     </fieldset>
   </details>
 
-  <!-- PLAN GASTOS -->
+  <!-- Plan de gastos -->
   <details id="planBlock">
     <summary>💸 Planificación de gastos</summary>
     <table id="planTbl">
-      <thead><tr><th>Tipo</th><th>Día</th><th>Categoría</th><th>Monto</th><th>Método</th><th>Banco</th><th>Real</th><th>✔︎</th></tr></thead>
+      <thead>
+        <tr><th>Tipo</th><th>Día</th><th>Categoría</th><th>Monto</th><th>Origen</th><th>Método</th><th>Banco</th><th>✔︎</th></tr>
+      </thead>
       <tbody></tbody>
     </table>
     <fieldset>
@@ -135,6 +139,10 @@
       <select id="pDia"></select>
       <select id="pCat"></select>
       <input type="number" id="pMonto" step="0.01" placeholder="$">
+      <select id="pOrigin">
+        <option value="planeado">Planeado</option>
+        <option value="extra">Extra</option>
+      </select>
       <select id="pPay">
         <option value="Efectivo">Efectivo</option>
         <option value="Debito">Débito</option>
@@ -145,7 +153,7 @@
     </fieldset>
   </details>
 
-  <!-- GASTO REAL -->
+  <!-- Registrar gasto real -->
   <details id="realBlock" open>
     <summary>➕ Registrar gasto real</summary>
     <fieldset>
@@ -155,7 +163,7 @@
       <select id="gCat"></select>
       <label>Monto</label>
       <input type="number" id="gAmount" step="0.01">
-      <label>Origen del gasto</label>
+      <label>Origen</label>
       <select id="gOrigin">
         <option value="planeado">Planeado</option>
         <option value="extra">Extra</option>
@@ -169,268 +177,252 @@
       <label id="gBankLbl" style="display:none">Banco</label>
       <select id="gBank" style="display:none"></select>
       <label id="motivoLbl" style="display:none">Motivo extra</label>
-      <input id="motivoTxt" style="display:none" placeholder="Descripción extra">
+      <input id="motivoTxt" style="display:none" placeholder="Descripción">
       <button type="button" onclick="addGasto()">Guardar gasto</button>
     </fieldset>
   </details>
 
-  <!-- ACTIVIDADES Y GASTOS HOY -->
+  <!-- Vistas de hoy -->
   <section class="grid" id="todayBlock">
     <div class="card"><h2>Actividades hoy</h2><ul id="todayAct"></ul></div>
     <div class="card"><h2>Gastos hoy</h2><ul id="todayPlan"></ul></div>
   </section>
 
+  <!-- Lista completa de gastos -->
   <details><summary>🗒️ Gastos registrados</summary><ul id="lista"></ul></details>
 
   <script>
-    /* CONSTANTES Y DATOS */
-    const BANKS = ["Pichincha","Pacifico","Internacional","Guayaquil","Produbanco","JEP","Policia","Austro","Bolivariano"];
-    const CATS = ["Buseta","Alquiler de carro","Hotel","GOLO","Entretenimiento","Comida","Aeropuerto","Snacks","Extras paseo","Transporte","Parqueo","Ropa","Propinas","Gasolina"];
-    const LS = "planViajeFullV5";
-    let data = JSON.parse(localStorage.getItem(LS) || '{"meta":{},"plan":[],"actividades":[],"gastos":[]}');
-    const fmt = n => '$'+(+n).toFixed(2);
+    /* Constantes y datos */
+    const BANKS=["Pichincha","Pacifico","Internacional","Guayaquil","Produbanco","JEP","Policia","Austro","Bolivariano"];
+    const CATS=["Buseta","Alquiler de carro","Hotel","GOLO","Entretenimiento","Comida","Aeropuerto","Snacks","Extras paseo","Transporte","Parqueo","Ropa","Propinas","Gasolina"];
+    const LS="planViajeV5";
+    let data=JSON.parse(localStorage.getItem(LS)||'{"meta":{},"plan":[],"actividades":[],"gastos":[]}');
+    const fmt=n=>'$'+(+n).toFixed(2);
+    function save(){localStorage.setItem(LS,JSON.stringify(data));}
 
-    function save(){ localStorage.setItem(LS, JSON.stringify(data)); }
-
-    /* POPULAR SELECTS */
+    /* Poblar selects */
     CATS.forEach(c=>{
-      pCat.innerHTML += `<option>${c}</option>`;
-      gCat.innerHTML += `<option>${c}</option>`;
-      aCat.innerHTML += `<option>${c}</option>`;
+      document.getElementById('pCat').innerHTML+=`<option>${c}</option>`;
+      document.getElementById('gCat').innerHTML+=`<option>${c}</option>`;
+      document.getElementById('aCat').innerHTML+=`<option>${c}</option>`;
     });
     BANKS.forEach(b=>{
-      pBank.innerHTML += `<option>${b}</option>`;
-      gBank.innerHTML += `<option>${b}</option>`;
+      document.getElementById('pBank').innerHTML+=`<option>${b}</option>`;
+      document.getElementById('gBank').innerHTML+=`<option>${b}</option>`;
     });
 
-    /* DÍAS */
+    /* Días dinámicos */
     function rebuildDias(){
-      [aDia,pDia].forEach(sel=>{ sel.innerHTML = ""; });
+      const aSel=document.getElementById('aDia'), pSel=document.getElementById('pDia');
+      aSel.innerHTML=pSel.innerHTML="";
       if(data.meta.start && data.meta.end){
-        const s=new Date(data.meta.start),e=new Date(data.meta.end);
-        const n = Math.round((e-s)/86400000)+1;
+        const s=new Date(data.meta.start), e=new Date(data.meta.end);
+        const n=Math.round((e-s)/86400000)+1;
         for(let i=1;i<=n;i++){
-          aDia.innerHTML += `<option>${i}</option>`;
-          pDia.innerHTML += `<option>${i}</option>`;
+          aSel.innerHTML+=`<option>${i}</option>`;
+          pSel.innerHTML+=`<option>${i}</option>`;
         }
       }
-      pDia.innerHTML += '<option>Todos</option>';
+      pSel.innerHTML+='<option>Todos</option>';
     }
 
-    /* GUARDAR FECHAS */
+    /* Guardar fechas */
     function saveTrip(){
-      data.meta.start = tripStart.value;
-      data.meta.end   = tripEnd.value;
-      data.meta.lock  = tripLock.value;
+      data.meta.start=tripStart.value;
+      data.meta.end=tripEnd.value;
+      data.meta.lock=tripLock.value;
       data.meta.extraIni = parseFloat(extraIni.value)||0;
       data.meta.extra = data.meta.extraIni;
       save(); rebuildDias(); renderUI(); tick();
-      configBox.open = false;
+      configBox.open=false;
     }
 
-    /* AGENDA */
+    /* Agenda actividades */
     function addAct(){
-      if(!aIni.value||!aTxt.value.trim()){ alert('Hora y descripción.'); return; }
+      if(!aIni.value||!aTxt.value.trim()){alert('Hora y descripción.');return;}
       data.actividades.push({
         id:crypto.randomUUID(),
         dia:+aDia.value, ini:aIni.value, fin:aFin.value,
         cat:aCat.value, txt:aTxt.value.trim(), done:false
       });
       save(); renderActTable();
-      aIni.value='';aFin.value='';aTxt.value='';
+      aIni.value=''; aFin.value=''; aTxt.value='';
     }
     function toggleAct(id){
       const a=data.actividades.find(x=>x.id===id);
-      if(a){ a.done = !a.done; save(); renderActTable(); }
+      if(a){a.done=!a.done; save(); renderActTable();}
     }
     function renderActTable(){
-      actTbl.tBodies[0].innerHTML = "";
-      data.actividades
-        .filter(a => !a.done)
+      const tb=actTbl.tBodies[0];
+      tb.innerHTML="";
+      data.actividades.filter(a=>!a.done)
         .sort((a,b)=>a.dia-b.dia||a.ini.localeCompare(b.ini))
         .forEach(a=>{
-          actTbl.tBodies[0].innerHTML += `
+          tb.innerHTML+=`
             <tr>
-              <td>${a.dia}</td><td>${a.ini}</td><td>${a.fin||''}</td>
-              <td>${a.cat}</td><td>${a.txt}</td>
-              <td><input type="checkbox" onclick="toggleAct('${a.id}'); renderToday();" /></td>
+              <td>${a.dia}</td>
+              <td>${a.ini}</td>
+              <td>${a.fin||''}</td>
+              <td>${a.cat}</td>
+              <td>${a.txt}</td>
+              <td><input type="checkbox"
+                         onclick="toggleAct('${a.id}'); renderToday();" /></td>
             </tr>`;
         });
     }
 
-    /* PLAN DE GASTOS */
-    pPay.onchange = ()=> pBank.style.display = pPay.value==="Credito"?'block':'none';
-    gPay.onchange = ()=>{
+    /* Plan de gastos */
+    document.getElementById('pPay').onchange = ()=> {
+      pBank.style.display = pPay.value==="Credito"?'block':'none';
+    };
+    document.getElementById('gPay').onchange = ()=> {
       const show = gPay.value==="Credito";
       gBankLbl.style.display = gBank.style.display = show?'block':'none';
     };
 
     function addPlan(){
       const tipo=pTipo.value, dia=pDia.value, cat=pCat.value,
-            monto=parseFloat(pMonto.value)||0,
-            pay=pPay.value, bank = pay==="Credito"?pBank.value:"",
-            done=false, real=0;
-      if(!monto){ alert('Monto requerido'); return; }
-      if(tipo==="fijo"&&(dia==="Todos")){ alert('Elige día'); return; }
-      if(tipo==="variable"&&(dia!=="Todos")){ alert('Para variable usa "Todos"'); return; }
-      data.plan.push({ id:crypto.randomUUID(),tipo,dia,cat,monto,metodo:pay,banco:bank,real,done });
+            mont=parseFloat(pMonto.value)||0,
+            orig=pOrigin.value,
+            pay=pPay.value, bank=pay==="Credito"?pBank.value:"",
+            done=false;
+      if(!mont){alert('Monto requerido');return;}
+      if(tipo==="fijo"&&dia==="Todos"){alert('Elige día.');return;}
+      if(tipo==="variable"&&dia!=="Todos"){alert('Para variable usa "Todos".');return;}
+      data.plan.push({id:crypto.randomUUID(),tipo,dia,cat,monto:mont,origin:orig,metodo:pay,banco:bank,done});
       save(); renderPlanTable(); updateSummary(); pMonto.value='';
     }
     function togglePlan(id){
-      const p = data.plan.find(x=>x.id===id);
-      if(p){ p.done = !p.done; save(); renderPlanTable(); updateSummary(); }
-    }
-    function registrarReal(id,val){
-      const p = data.plan.find(x=>x.id===id);
-      if(p){ p.real = parseFloat(val)||0; p.done=true; save(); renderPlanTable(); updateSummary(); }
+      const p=data.plan.find(x=>x.id===id);
+      if(p){p.done=!p.done; save(); renderPlanTable(); updateSummary();}
     }
     function renderPlanTable(){
-      planTbl.tBodies[0].innerHTML = "";
+      const tb=planTbl.tBodies[0];
+      tb.innerHTML="";
       data.plan.filter(p=>!p.done).forEach(p=>{
-        planTbl.tBodies[0].innerHTML += `
+        tb.innerHTML+=`
           <tr>
-            <td>${p.tipo}</td><td>${p.dia}</td><td>${p.cat}</td><td>${fmt(p.monto)}</td>
-            <td>${p.metodo}</td><td>${p.banco||'-'}</td>
-            <td><input type="number" step="0.01" value="${p.real||''}"
-                       oninput="registrarReal('${p.id}',this.value)" /></td>
-            <td><input type="checkbox" onclick="togglePlan('${p.id}'); renderToday();" /></td>
+            <td>${p.tipo}</td>
+            <td>${p.dia}</td>
+            <td>${p.cat}</td>
+            <td>${fmt(p.monto)}</td>
+            <td>${p.origin}</td>
+            <td>${p.metodo}</td>
+            <td>${p.banco||'-'}</td>
+            <td><input type="checkbox"
+                       onclick="togglePlan('${p.id}'); renderToday();" /></td>
           </tr>`;
       });
     }
 
-    /* GASTO REAL */
+    /* Registrar gasto real */
     function addGasto(){
-      if(!gDate.value||!gAmount.value){ alert('Fecha y monto.'); return; }
-      const origin = gOrigin.value, cat=gCat.value,
-            monto=+gAmount.value, pay=gPay.value,
+      if(!gDate.value||!gAmount.value){alert('Fecha y monto.');return;}
+      const origin=gOrigin.value, cat=gCat.value,
+            mont=+gAmount.value, pay=gPay.value,
             bank=pay==="Credito"?gBank.value:"",
-            mot = motivoTxt.value.trim();
-      data.gastos.push({ fecha:gDate.value,cat,monto,metodo:pay,banco:bank,extra:(origin==="extra"),motivo:mot });
+            mot=motivoTxt.value.trim();
+      data.gastos.push({fecha:gDate.value,cat,monto:mont,origin,metodo:pay,banco:bank,extra:(origin==="extra"),motivo:mot});
       save(); renderList(); updateSummary(); gAmount.value=''; motivoTxt.value='';
     }
     function renderList(){
-      lista.innerHTML = "";
+      lista.innerHTML="";
       data.gastos.forEach(g=>{
-        lista.innerHTML += `<li>${g.fecha} • ${g.cat} • ${fmt(g.monto)} • ${g.metodo}${g.banco?'-'+g.banco:''}${g.extra?' • extra':''}</li>`;
+        lista.innerHTML+=`<li>${g.fecha} • ${g.cat} • ${fmt(g.monto)} • ${g.origin} • ${g.metodo}${g.banco?'-'+g.banco:''}</li>`;
       });
     }
 
-    /* RESUMEN */
+    /* Render Today */
+    function renderToday(){
+      const hoy=new Date().toISOString().slice(0,10),
+            start=new Date(data.meta.start),
+            diaNum=Math.round((new Date(hoy)-start)/86400000)+1;
+      // actividades
+      const actLis=data.actividades.filter(a=>a.dia===diaNum&&!a.done)
+        .sort((a,b)=>a.ini.localeCompare(b.ini))
+        .map(a=>`<li><input type="checkbox" onclick="toggleAct('${a.id}'); renderActTable(); updateSummary(); renderToday();" /> ${a.ini}${a.fin?`–${a.fin}`:''} • ${a.cat} • ${a.txt}</li>`)
+        .join('');
+      todayAct.innerHTML=actLis||'<li>(ninguna)</li>';
+      // gastos fijos
+      const pLis=data.plan.filter(p=>p.tipo==="fijo"&&+p.dia===diaNum&&!p.done)
+        .map(p=>`<li><input type="checkbox" onclick="togglePlan('${p.id}'); renderPlanTable(); updateSummary(); renderToday();" /> ${p.cat} • ${fmt(p.monto)}</li>`)
+        .join('');
+      todayPlan.innerHTML=pLis||'<li>(ninguno)</li>';
+    }
+
+    /* Resumen y tarjetas */
     function updateSummary(){
-      /* totales */
-      const planTotal = data.plan.reduce((s,p)=>s+p.monto,0),
-            realTotal = data.gastos.filter(g=>!g.extra).reduce((s,g)=>s+g.monto,0);
-      sumBudget.textContent = fmt(planTotal);
-      sumSpent.textContent  = fmt(realTotal);
-      sumDiff.textContent   = fmt(planTotal - realTotal);
+      // presupuesto vs real (solo planeados)
+      const planTotal=data.plan.reduce((s,p)=>s+p.monto,0),
+            realTotal=data.gastos.filter(g=>g.origin==="planeado").reduce((s,g)=>s+g.monto,0);
+      sumBudget.textContent=fmt(planTotal);
+      sumSpent.textContent=fmt(realTotal);
+      sumDiff.textContent=fmt(planTotal-realTotal);
 
-      /* bancos dinámicos */
-      const stat = {}, cards = dynamicCards;
-      BANKS.forEach(b=> stat[b] = {plan:0,real:0,rPlan:0,rReal:0});
-      data.plan.forEach(p=>{
-        if(p.metodo==="Credito") { stat[p.banco].plan += p.monto;
-          if(p.cat==="Ropa") stat[p.banco].rPlan += p.monto;
-        }
-      });
-      data.gastos.filter(g=>!g.extra).forEach(g=>{
-        if(g.metodo==="Credito") { stat[g.banco].real += g.monto;
-          if(g.cat==="Ropa") stat[g.banco].rReal += g.monto;
-        }
-      });
-
-      /* reconstruir tarjetas */
-      cards.innerHTML = "";
+      // dinámico bancos
+      const stat={}; BANKS.forEach(b=>stat[b]={plan:0,real:0,rPlan:0,rReal:0});
+      data.plan.forEach(p=>{ if(p.metodo==="Credito") { stat[p.banco].plan+=p.monto; if(p.cat==="Ropa") stat[p.banco].rPlan+=p.monto; } });
+      data.gastos.filter(g=>g.origin==="planeado").forEach(g=>{ if(g.metodo==="Credito"){ stat[g.banco].real+=g.monto; if(g.cat==="Ropa") stat[g.banco].rReal+=g.monto; } });
+      const cards=dynamicCards; cards.innerHTML="";
       BANKS.forEach(b=>{
         const s=stat[b];
         if(s.plan||s.real){
-          cards.innerHTML += `<div class="card"><h2>${b} Total</h2><span>${fmt(s.plan - s.real)}</span></div>`;
-          if(s.rPlan||s.rReal){
-            cards.innerHTML += `<div class="card"><h2>${b} Ropa</h2><span>${fmt(s.rPlan - s.rReal)}</span></div>`;
-          }
+          cards.innerHTML+=`<div class="card"><h2>${b} Total</h2><span>${fmt(s.plan-s.real)}</span></div>`;
+          if(s.rPlan||s.rReal) cards.innerHTML+=`<div class="card"><h2>${b} Ropa</h2><span>${fmt(s.rPlan-s.rReal)}</span></div>`;
         }
       });
-
-      /* pools */
-      const poolSum = cat => ({
-        plan: data.plan.filter(p=>p.tipo==="variable"&&p.cat===cat).reduce((s,p)=>s+p.monto,0),
-        real: data.gastos.filter(g=>g.cat===cat&& !g.extra).reduce((s,g)=>s+g.monto,0)
+      // pools
+      const poolSum=cat=>({
+        plan:data.plan.filter(p=>p.tipo==="variable"&&p.cat===cat).reduce((s,p)=>s+p.monto,0),
+        real:data.gastos.filter(g=>g.cat===cat&&g.origin==="planeado").reduce((s,g)=>s+g.monto,0)
       });
-      const G=poolSum("Gasolina"), P=poolSum("Propinas");
-      cards.innerHTML += `<div class="card"><h2>Gasolina saldo</h2><span>${fmt(G.plan-G.real)}</span></div>`;
-      cards.innerHTML += `<div class="card"><h2>Propinas saldo</h2><span>${fmt(P.plan-P.real)}</span></div>`;
+      const GAS=poolSum("Gasolina"), PR=poolSum("Propinas");
+      cards.innerHTML+=`<div class="card"><h2>Gasolina saldo</h2><span>${fmt(GAS.plan-GAS.real)}</span></div>`;
+      cards.innerHTML+=`<div class="card"><h2>Propinas saldo</h2><span>${fmt(PR.plan-PR.real)}</span></div>`;
+      // variación solo hechos (planeados)
+      const delta=data.plan.filter(p=>p.done).reduce((s,p)=>s+(p.real-p.monto),0);
+      cards.innerHTML+=`<div class="card"><h2>Variación plan</h2><span>${fmt(delta)}</span></div>`;
 
-      /* variación plan solo hechos */
-      const delta = data.plan.filter(p=>p.done).reduce((s,p)=>s + (p.real - p.monto),0);
-      cards.innerHTML += `<div class="card"><h2>Variación plan</h2><span>${fmt(delta)}</span></div>`;
-
-      /* extra inicial + no ejecutados */
-      let extra = data.meta.extra || 0;
-      const hoy = new Date().toISOString().slice(0,10), start = new Date(data.meta.start);
-      data.plan.forEach(p=>{
-        if(!p.done && p.tipo==="fijo"){
-          const planDay = +p.dia;
-          const fechaPlan = new Date(start.getTime() + (planDay-1)*86400000)
-                                .toISOString().slice(0,10);
-          if(fechaPlan < hoy){
-            p.done = true; extra += p.monto;
-          }
+      // extra: inicial + no ejecutados
+      let extra=data.meta.extra||0;
+      const hoy=new Date().toISOString().slice(0,10), start=new Date(data.meta.start);
+      data.plan.forEach(p=>{ 
+        if(!p.done&&p.tipo==="fijo"){ 
+          const planDay=+p.dia, planDate=new Date(start.getTime()+(planDay-1)*86400000).toISOString().slice(0,10);
+          if(planDate<hoy){ p.done=true; extra+=p.monto; }
         }
       });
-      data.meta.extra = extra;
-      sumExtra.textContent = fmt(extra);
+      data.meta.extra=extra; sumExtra.textContent=fmt(extra);
 
-      save();
-      renderToday();
+      save(); renderToday();
     }
 
-    /* ACTIVIDADES & GASTOS HOY */
-    function renderToday(){
-      const hoy = new Date().toISOString().slice(0,10),
-            start = new Date(data.meta.start),
-            diaNum = Math.round((new Date(hoy) - start)/86400000)+1;
-
-      // actividades
-      const aList = data.actividades
-        .filter(a=>a.dia===diaNum && !a.done)
-        .sort((a,b)=>a.ini.localeCompare(b.ini))
-        .map(a=>`<li><input type="checkbox" onclick="toggleAct('${a.id}'); renderActTable(); updateSummary();" /> ${a.ini}${a.fin?`–${a.fin}`:''} • ${a.cat} • ${a.txt}</li>`)
-        .join('');
-      todayAct.innerHTML = aList||'<li>(ninguna)</li>';
-
-      // gastos fijos
-      const pList = data.plan
-        .filter(p=>p.tipo==="fijo"&&+p.dia===diaNum&&!p.done)
-        .map(p=>`<li><input type="checkbox" onclick="togglePlan('${p.id}'); renderPlanTable(); updateSummary();" /> ${p.cat} • ${fmt(p.monto)}</li>`)
-        .join('');
-      todayPlan.innerHTML = pList||'<li>(ninguno)</li>';
-    }
-
-    /* CUENTA REGRESIVA */
+    /* Cuenta regresiva (Ecuador UTC-05:00) */
     function tick(){
       if(!data.meta.start) return;
-      const diff = new Date(data.meta.start) - new Date(),
-            el = countdown;
-      if(diff <= 0){ el.textContent = '¡Viaje en curso!'; return; }
-      const d = Math.floor(diff/86400000), h = Math.floor(diff%86400000/3600000),
-            m = Math.floor(diff%3600000/60000), s = Math.floor(diff%60000/1000);
-      el.textContent = `${d}d ${h}h ${m}m ${s}s`;
+      const target=new Date(data.meta.start+"T00:00:00-05:00").getTime();
+      let diff=target-Date.now(), el=countdown;
+      if(diff<=0){ el.textContent="¡Viaje en curso!"; return; }
+      const d=Math.floor(diff/864e5); diff%=864e5;
+      const h=Math.floor(diff/36e5); diff%=36e5;
+      const m=Math.floor(diff/6e4); diff%=6e4;
+      const s=Math.floor(diff/1e3);
+      el.textContent=`${d}d ${h}h ${m}m ${s}s`;
     }
 
+    /* Render UI */
     function renderUI(){
       rebuildDias();
       renderActTable();
       renderPlanTable();
       renderList();
       updateSummary();
-      // bloquear tras fecha límite
-      if(data.meta.lock && new Date() > new Date(data.meta.lock)){
-        document.querySelectorAll('#planBlock input,#planBlock select,#planBlock button,#actBlock input,#actBlock select,#actBlock button')
-          .forEach(el=>el.disabled=true);
-      }
     }
 
-    /* INICIALIZAR */
-    renderUI(); tick(); setInterval(tick,1000);
+    /* Iniciar */
+    renderUI();
+    tick();
+    setInterval(tick,1000);
   </script>
 </body>
 </html>
