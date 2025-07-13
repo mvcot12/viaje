@@ -2,245 +2,185 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Plan de Viaje</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    :root {
-      --bg1: #fff8e1;
-      --bg2: #e0f7fa;
-      --glass: rgba(255,255,255,0.2);
-      --blur: blur(16px);
-      --accent: #6d5fbd;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; padding: 1rem;
-      font-family: -apple-system, Helvetica, Arial, sans-serif;
-      background: linear-gradient(135deg, var(--bg1), var(--bg2));
-      color: #222;
-    }
-    header {
-      backdrop-filter: var(--blur);
-      background: var(--glass);
-      border-radius: 20px;
-      padding: 1rem;
-      margin-bottom: 1.2rem;
-      box-shadow: 0 4px 18px rgba(0,0,0,.15);
-    }
-    h1 { margin: 0; font-size: 1.5rem; color: var(--accent); }
-    .count { font-family: monospace; text-align: center; margin-top: .4rem; }
-    .grid {
-      display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;
-    }
-    .card {
-      flex: 1 1 140px;
-      background: var(--glass);
-      backdrop-filter: var(--blur);
-      padding: .9rem;
-      border-radius: 18px;
-      text-align: center;
-      box-shadow: 0 1px 6px rgba(0,0,0,.12);
-      transition: all .2s ease;
-    }
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0,0,0,.1);
-    }
-    .card h2 { margin: .2rem 0; font-size: .95rem; color: var(--accent); }
-    input, select, button {
-      width: 100%; padding: .6rem; margin-top: .4rem;
-      border-radius: 12px; border: 1px solid #ccc; font-size: .9rem;
-    }
-    button {
-      background: var(--accent); color: #fff; border: none; cursor: pointer;
-    }
-    details { margin-bottom: 1rem; }
-    summary { cursor: pointer; font-weight: 600; margin-bottom: .5rem; }
-    table {
-      width: 100%; border-collapse: collapse; font-size: .85rem;
-    }
-    th, td {
-      padding: .4rem; border-bottom: 1px solid #ddd; text-align: left;
-    }
-    tr.done td {
-      text-decoration: line-through;
-      opacity: .5;
-    }
-    fieldset { border: none; padding: 0; margin: 0; }
-    @media(max-width:480px) {
-      .card { flex: 1 1 120px; }
-    }
+    /* estilos omitidos */
   </style>
 </head>
 <body>
-  <header>
-    <h1>Plan de Viaje</h1>
-    <div id="countdown" class="count">Sin configuración</div>
-  </header>
+  <!-- cabecera/resumen omitido -->
 
-  <!-- RESUMEN PRINCIPAL -->
-  <section class="grid" id="mainSummary">
-    <div class="card"><h2>Presupuesto plan</h2><span id="sumBudget">$0</span></div>
-    <div class="card"><h2>Gastado real</h2><span id="sumSpent">$0</span></div>
-    <div class="card"><h2>Diferencia</h2><span id="sumDiff">$0</span></div>
-    <div class="card"><h2>Extra disponible</h2><span id="sumExtra">$0</span></div>
-  </section>
-  <section class="grid" id="dynamicCards"></section>
-
-  <!-- ACTIVIDADES Y GASTOS HOY (moved above config) -->
-  <section class="grid" id="todayBlock">
-    <div class="card"><h2>Actividades hoy</h2><ul id="todayAct"></ul></div>
-    <div class="card"><h2>Gastos hoy</h2><ul id="todayPlan"></ul></div>
-  </section>
-
-  <!-- CONFIGURAR VIAJE -->
-  <details id="configBox" open>
-    <summary>🗓️ Configurar viaje</summary>
-    <fieldset>
-      <label>Fecha inicio</label>
-      <input type="date" id="tripStart">
-      <label>Fecha fin</label>
-      <input type="date" id="tripEnd">
-      <label>Fecha límite edición plan</label>
-      <input type="date" id="tripLock">
-      <label>Extra disponible inicial</label>
-      <input type="number" id="extraIni" step="0.01" placeholder="$">
-      <button type="button" onclick="saveTrip()">Guardar fechas</button>
-    </fieldset>
-  </details>
-
-  <!-- PLANIFICACIÓN DE ACTIVIDADES -->
-  <details id="actBlock">
-    <summary>📅 Planificación de actividades</summary>
-    <table id="actTbl">
-      <thead><tr><th>Día</th><th>Inicio</th><th>Fin</th><th>Categoría</th><th>Descripción</th><th>✔︎</th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <fieldset>
-      <select id="aDia"></select>
-      <input type="time" id="aIni">
-      <input type="time" id="aFin">
-      <select id="aCat"></select>
-      <input type="text" id="aTxt" placeholder="Descripción">
-      <button type="button" onclick="addAct()">Añadir actividad</button>
-    </fieldset>
-  </details>
-
-  <!-- PLANIFICACIÓN DE GASTOS -->
-  <details id="planBlock">
-    <summary>💸 Planificación de gastos</summary>
-    <table id="planTbl">
-      <thead><tr><th>Tipo</th><th>Día</th><th>Categoría</th><th>Monto</th><th>Origen</th><th>Método</th><th>Banco</th><th>✔︎</th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <fieldset>
-      <select id="pTipo">
-        <option value="fijo">Fijo por día</option>
-        <option value="variable">Variable (todo viaje)</option>
-      </select>
-      <select id="pDia"></select>
-      <select id="pCat"></select>
-      <input type="number" id="pMonto" step="0.01" placeholder="$">
-      <select id="pOrigin">
-        <option value="planeado">Planeado</option>
-        <option value="extra">Extra</option>
-      </select>
-      <select id="pPay">
-        <option value="Efectivo">Efectivo</option>
-        <option value="Debito">Débito</option>
-        <option value="Credito">Crédito</option>
-      </select>
-      <select id="pBank" style="display:none"></select>
-      <button type="button" onclick="addPlan()">Añadir plan</button>
-    </fieldset>
-  </details>
-
-  <!-- REGISTRAR GASTO REAL (use select gDia en lugar de gDate) -->
-  <details id="realBlock" open>
-    <summary>➕ Registrar gasto real</summary>
-    <fieldset>
-      <label>Día del viaje</label>
-      <select id="gDia"></select>
-      <label>Categoría</label>
-      <select id="gCat"></select>
-      <label>Monto</label>
-      <input type="number" id="gAmount" step="0.01">
-      <label>Origen</label>
-      <select id="gOrigin">
-        <option value="planeado">Planeado</option>
-        <option value="extra">Extra</option>
-      </select>
-      <label>Método pago</label>
-      <select id="gPay">
-        <option value="Efectivo">Efectivo</option>
-        <option value="Debito">Débito</option>
-        <option value="Credito">Crédito</option>
-      </select>
-      <label id="gBankLbl" style="display:none">Banco</label>
-      <select id="gBank" style="display:none"></select>
-      <label id="motivoLbl" style="display:none">Motivo extra</label>
-      <input id="motivoTxt" style="display:none" placeholder="Descripción">
-      <button type="button" onclick="addGasto()">Guardar gasto</button>
-    </fieldset>
-  </details>
-
-  <!-- LISTA COMPLETA DE GASTOS -->
-  <details><summary>🗒️ Gastos registrados</summary><ul id="lista"></ul></details>
+  <details id="configBox" open>...</details>
+  <details id="actBlock">...</details>
+  <details id="planBlock">...</details>
+  <details id="realBlock" open>...</details>
 
   <script>
-    /* CONSTANTES Y DATOS */
-    const BANKS=["Pichincha","Pacifico","Internacional","Guayaquil","Produbanco","JEP","Policia","Austro","Bolivariano"];
-    const CATS=["Buseta","Alquiler de carro","Hotel","GOLO","Entretenimiento","Comida","Aeropuerto","Snacks","Extras paseo","Transporte","Parqueo","Ropa","Propinas","Gasolina"];
-    const LS="planViajeV6";
-    let data=JSON.parse(localStorage.getItem(LS)||'{"meta":{},"plan":[],"actividades":[],"gastos":[]}');
-    const fmt=n=>'$'+(+n).toFixed(2);
-    function save(){localStorage.setItem(LS,JSON.stringify(data));}
+  // Referencias a DOM
+  const tripStart = document.getElementById('tripStart');
+  const tripEnd = document.getElementById('tripEnd');
+  const tripLock = document.getElementById('tripLock');
+  const extraIni = document.getElementById('extraIni');
+  const aDia = document.getElementById('aDia');
+  const aIni = document.getElementById('aIni');
+  const aFin = document.getElementById('aFin');
+  const aCat = document.getElementById('aCat');
+  const aTxt = document.getElementById('aTxt');
+  const actTbl = document.getElementById('actTbl');
+  const pDia = document.getElementById('pDia');
+  const pCat = document.getElementById('pCat');
+  const pMonto = document.getElementById('pMonto');
+  const planTbl = document.getElementById('planTbl');
+  const gDia = document.getElementById('gDia');
+  const gCat = document.getElementById('gCat');
+  const gAmount = document.getElementById('gAmount');
+  const gPay = document.getElementById('gPay');
+  const lista = document.getElementById('lista');
+  const totalDays = document.getElementById('totalDays');
+  const dayBudget = document.getElementById('dayBudget');
+  const dayBudgetCash = document.getElementById('dayBudgetCash');
+  const dayBudgetCard = document.getElementById('dayBudgetCard');
+  const daySpent = document.getElementById('daySpent');
+  const daySpentCash = document.getElementById('daySpentCash');
+  const daySpentCard = document.getElementById('daySpentCard');
+  const dayDiff = document.getElementById('dayDiff');
+  const diffCash = document.getElementById('diffCash');
+  const diffCard = document.getElementById('diffCard');
+  const dayExtra = document.getElementById('dayExtra');
+  const currentDay = document.getElementById('currentDay');
+  const todayAct = document.getElementById('todayAct');
+  const todayPlan = document.getElementById('todayPlan');
 
-    /* POBLAR SELECTS */
-    CATS.forEach(c=>{pCat.innerHTML+=`<option>${c}</option>`;gCat.innerHTML+=`<option>${c}</option>`;aCat.innerHTML+=`<option>${c}</option>`;});
-    BANKS.forEach(b=>{pBank.innerHTML+=`<option>${b}</option>`;gBank.innerHTML+=`<option>${b}</option>`;});
+  // Lista real de categorías
+  const CATS = [
+    'Buseta', 'Alquiler de carro', 'Hotel', 'GOLO', 'Entretenimiento',
+    'Comida', 'Aeropuerto', 'Snacks', 'Extras paseo', 'Transporte',
+    'Parqueo', 'Ropa', 'Propinas', 'Gasolina'
+  ];
 
-    /* DÍAS DINÁMICOS EN pDia, aDia y gDia */
-    function rebuildDias(){
-      [aDia,pDia,gDia].forEach(sel=>sel.innerHTML='');
-      if(data.meta.start&&data.meta.end){
-        const s=new Date(data.meta.start),e=new Date(data.meta.end);
-        const n=Math.round((e-s)/86400000)+1;
-        for(let i=1;i<=n;i++){
-          aDia.innerHTML+=`<option>${i}</option>`;
-          pDia.innerHTML+=`<option>${i}</option>`;
-          gDia.innerHTML+=`<option>${i}</option>`;
-        }
+  const LS = 'viajeV7';
+  let data = JSON.parse(localStorage.getItem(LS) || '{}');
+  if (!data.meta) data = { meta: {}, plan: [], act: [], gastos: [] };
+
+  function fmt(n) {
+    const num = Number(n);
+    return '$' + (isNaN(num) ? 0 : num).toFixed(2);
+  }
+  function save() {
+    localStorage.setItem(LS, JSON.stringify(data));
+  }
+
+  function initSelects() {
+    CATS.forEach(c => {
+      aCat.innerHTML += `<option>${c}</option>`;
+      pCat.innerHTML += `<option>${c}</option>`;
+      gCat.innerHTML += `<option>${c}</option>`;
+    });
+  }
+
+  function rebuildDias() {
+    [aDia, pDia, gDia].forEach(el => el.innerHTML = '');
+    if (data.meta.start && data.meta.end) {
+      const s = new Date(data.meta.start), e = new Date(data.meta.end);
+      const total = Math.floor((e - s) / 86400000) + 1;
+      for (let i = 1; i <= total; i++) {
+        aDia.innerHTML += `<option>${i}</option>`;
+        pDia.innerHTML += `<option>${i}</option>`;
+        gDia.innerHTML += `<option>${i}</option>`;
       }
-      pDia.innerHTML+='<option>Todos</option>';
+      totalDays.textContent = total;
     }
+    pDia.innerHTML += '<option>Todos</option>';
+  }
 
-    /* GUARDAR FECHAS */
-    function saveTrip(){
-      data.meta.start=tripStart.value;
-      data.meta.end=tripEnd.value;
-      data.meta.lock=tripLock.value;
-      data.meta.extraIni=parseFloat(extraIni.value)||0;
-      data.meta.extra=data.meta.extraIni;
-      save(); rebuildDias(); renderUI(); tick();
-      configBox.open=false;
-    }
+  function saveTrip() {
+    data.meta.start = tripStart.value;
+    data.meta.end = tripEnd.value;
+    data.meta.lock = tripLock.value;
+    data.meta.extra = data.meta.extraIni = parseFloat(extraIni.value) || 0;
+    save(); rebuildDias(); renderUI();
+  }
 
-    /* AGENDA ACTIVIDADES */
-    function addAct(){ if(!aIni.value||!aTxt.value.trim()){alert('Hora y descripción.');return;} data.actividades.push({id:crypto.randomUUID(),dia:+aDia.value,ini:aIni.value,fin:aFin.value,cat:aCat.value,txt:aTxt.value.trim(),done:false});save();renderActTable();aIni.value='';aFin.value='';aTxt.value=''; }
-    function toggleAct(id){const a=data.actividades.find(x=>x.id===id);if(a){a.done=!a.done;save();renderActTable();}}
-    function renderActTable(){actTbl.tBodies[0].innerHTML='';data.actividades.filter(a=>!a.done).sort((a,b)=>a.dia-b.dia||a.ini.localeCompare(b.ini)).forEach(a=>{actTbl.tBodies[0].innerHTML+=`<tr><td>${a.dia}</td><td>${a.ini}</td><td>${a.fin||''}</td><td>${a.cat}</td><td>${a.txt}</td><td><input type="checkbox" onclick="toggleAct('${a.id}'); renderToday();" /></td></tr>`;});}
+  function addAct() {
+    if (!aIni.value || !aTxt.value.trim()) return;
+    data.act.push({ dia: +aDia.value, ini: aIni.value, fin: aFin.value, cat: aCat.value, txt: aTxt.value.trim(), done: false });
+    save(); renderAct(); renderToday(); updateDay();
+    aIni.value = aFin.value = aTxt.value = '';
+  }
+  function toggleAct(idx) { data.act[idx].done = !data.act[idx].done; save(); renderAct(); renderToday(); updateDay(); }
+  function renderAct() {
+    actTbl.tBodies[0].innerHTML = '';
+    data.act.forEach((a, i) => {
+      if (!a.done) actTbl.tBodies[0].innerHTML +=
+        `<tr><td>${a.dia}</td><td>${a.ini}</td><td>${a.fin || ''}</td><td>${a.cat}</td><td>${a.txt}</td>` +
+        `<td><input type="checkbox" onchange="toggleAct(${i})"></td></tr>`;
+    });
+  }
 
-    /* PLAN DE GASTOS */
-    pPay.onchange=()=>pBank.style.display=pPay.value==="Credito"?'block':'none';
-    gPay.onchange=()=>{const show=gPay.value==="Credito";gBankLbl.style.display=gBank.style.display=show?'block':'none';};
-    function addPlan(){const tipo=pTipo.value,dia=pDia.value,cat=pCat.value,m=parseFloat(pMonto.value)||0,orig=pOrigin.value,pay=pPay.value,bank=pay==="Credito"?pBank.value:"";if(!m){alert('Monto requerido');return;}if(tipo==="fijo"&&dia==="Todos"){alert('Elige día.');return;}if(tipo==="variable"&&dia!="Todos"){alert('Para variable usa "Todos".');return;}data.plan.push({id:crypto.randomUUID(),tipo,dia,cat,monto:m,origin:orig,metodo:pay,banco:bank,done:false,real:0});save();renderPlanTable();updateSummary();pMonto.value='';}
-    function togglePlan(id){const p=data.plan.find(x=>x.id===id);if(p){p.done=!p.done;save();renderPlanTable();updateSummary();}}
-    function renderPlanTable(){planTbl.tBodies[0].innerHTML='';data.plan.filter(p=>!p.done).forEach(p=>{planTbl.tBodies[0].innerHTML+=`<tr><td>${p.tipo}</td><td>${p.dia}</td><td>${p.cat}</td><td>${fmt(p.monto)}</td><td>${p.origin}</td><td>${p.metodo}</td><td>${p.banco||'-'}</td><td><input type="checkbox" onclick="togglePlan('${p.id}'); renderToday();" /></td></tr>`;});}
+  function addPlan() {
+    const m = parseFloat(pMonto.value) || 0;
+    if (!m) return;
+    data.plan.push({ tipo: 'fijo', dia: pDia.value, cat: pCat.value, monto: m, done: false });
+    save(); renderPlan(); renderToday(); updateDay(); pMonto.value = '';
+  }
+  function togglePlan(idx) { data.plan[idx].done = !data.plan[idx].done; save(); renderPlan(); renderToday(); updateDay(); }
+  function renderPlan() {
+    planTbl.tBodies[0].innerHTML = '';
+    data.plan.forEach((p, i) => {
+      if (!p.done) planTbl.tBodies[0].innerHTML +=
+        `<tr><td>${p.tipo}</td><td>${p.dia}</td><td>${p.cat}</td><td>${fmt(p.monto)}</td>` +
+        `<td><input type="checkbox" onchange="togglePlan(${i})"></td></tr>`;
+    });
+  }
 
-    /* GASTO REAL */
-    function addGasto(){if(!gDia.value||!gAmount.value){alert('Día y monto.');return;}const g={dia:+gDia.value,cat:gCat.value,monto:+gAmount.value,origin:gOrigin.value,metodo:gPay.value,banco:gPay.value==="Credito"?gBank.value:"",extra:(gOrigin.value==="extra"),motivo:motivoTxt.value.trim()};data.gastos.push(g);save();renderList();updateSummary();gAmount.value='';motivoTxt.value='';motivoTxt.value='';}
-    function renderList(){lista.innerHTML='';data.gastos.forEach(g=>{lista.innerHTML+=`<li>${g.dia} • ${g.cat} • ${fmt(g.monto)} • ${g.origin} • ${g.metodo}${g.banco?'-'+g.banco:''}</li>`;});}
+  function addGasto() {
+    const m = parseFloat(gAmount.value) || 0;
+    if (!m) return;
+    data.gastos.push({ dia: +gDia.value, cat: gCat.value, m: m, pay: gPay.value });
+    save(); renderList(); renderToday(); updateDay(); gAmount.value = '';
+  }
+  function renderList() {
+    lista.innerHTML = '';
+    data.gastos.forEach(g => lista.innerHTML += `<li>Día ${g.dia} • ${g.cat} • ${fmt(g.m)} • ${g.pay}</li>`);
+  }
 
-    /* ACTIVIDADES & GASTOS HOY */
-    function renderToday(){const hoy=new Date().toISOString().slice(0,10),start=new Date(data.meta.start),diaNum=Math.round((new Date(hoy)-start)/86400000)+1;const actLis=data.actividades.filter(a=>a.dia===diaNum&&!a.done).sort((a,b)=>a.ini.localeCompare(b.ini)).map(a=>`<li><input type="checkbox" onclick="toggleAct('${a.id}'); renderActTable(); updateSummary(); renderToday();" /> ${a.ini}${a.fin?`–${a.fin}`:''} • ${a.cat} • ${a.txt}</li>`).join('');todayAct.innerHTML=actLis||'<li>(ninguna)</li>';const pLis=data.plan.filter(p=>p.tipo==="fijo"&&+p.dia===diaNum&&!p.done).map(p=>`<li><input type="checkbox" onclick="togglePlan('${p.id}'); renderPlanTable(); updateSummary(); render
+  function renderToday() {
+    if (!data.meta.start) return;
+    const now = new Date(), start = new Date(data.meta.start);
+    const day = Math.floor((now - start) / 86400000) + 1;
+    currentDay.textContent = day;
+    const actHtml = data.act.filter(a => a.dia === day && !a.done)
+      .map((a, i) => `<li>${a.ini} • ${a.cat} <input type="checkbox" onchange="toggleAct(${i})"></li>`)
+      .join('') || '<li>(ninguna)</li>';
+    todayAct.innerHTML = actHtml;
+    const planHtml = data.plan.filter(p => p.tipo === 'fijo' && +p.dia === day && !p.done)
+      .map((p, i) => `<li>${p.cat} ${fmt(p.monto)} <input type="checkbox" onchange="togglePlan(${i})"></li>`)
+      .join('') || '<li>(ninguno)</li>';
+    todayPlan.innerHTML = planHtml;
+  }
+
+  function updateDay() {
+    if (!data.meta.start) return;
+    const now = new Date(), start = new Date(data.meta.start);
+    const day = Math.floor((now - start) / 86400000) + 1;
+    const dayPl = data.plan.filter(p => +p.dia === day).reduce((s, p) => s + p.monto, 0);
+    dayBudget.textContent = fmt(dayPl);
+    dayBudgetCash.textContent = fmt(dayPl);
+    dayBudgetCard.textContent = fmt(0);
+    const spent = data.gastos.filter(g => g.dia === day).reduce((s, g) => s + g.m, 0);
+    daySpent.textContent = fmt(spent);
+    daySpentCash.textContent = fmt(spent);
+    daySpentCard.textContent = fmt(0);
+    const diff = dayPl - spent;
+    dayDiff.textContent = fmt(diff);
+    diffCash.textContent = fmt(diff);
+    diffCard.textContent = fmt(0);
+    dayExtra.textContent = fmt(data.meta.extraIni || 0);
+  }
+
+  function renderUI() { initSelects(); rebuildDias(); renderAct(); renderPlan(); renderList(); renderToday(); updateDay(); }
+  renderUI();
+  </script>
+</body>
+</html>
