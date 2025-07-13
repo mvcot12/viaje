@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Plan de Viaje</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --bg1: #fff8e1;
+      --bg2: #e0f7fa;
+      --glass: rgba(255,255,255,0.2);
+      --blur: blur(16px);
+      --accent: #6d5fbd;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 1rem;
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      color: #222;
+    }
+    header {
+      backdrop-filter: var(--blur);
+      background: var(--glass);
+      border-radius: 20px;
+      padding: 1rem;
+      margin-bottom: 1.2rem;
+      box-shadow: 0 4px 18px rgba(0,0,0,.15);
+    }
+    h1 { margin: 0; font-size: 1.5rem; color: var(--accent); }
+    .count { font-family: monospace; text-align: center; margin-top: .4rem; }
+    .grid {
+      display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;
+    }
+    .card {
+      flex: 1 1 140px;
+      background: var(--glass);
+      backdrop-filter: var(--blur);
+      padding: .9rem;
+      border-radius: 18px;
+      text-align: center;
+      box-shadow: 0 1px 6px rgba(0,0,0,.12);
+      transition: all .2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.1);
+    }
+    .card h2 { margin: .2rem 0; font-size: .95rem; color: var(--accent); }
+    input, select, button { 
+      width: 100%; padding: .6rem; margin-top: .4rem;
+      border-radius: 12px; border: 1px solid #ccc; font-size: .9rem;
+    }
+    button {
+      background: var(--accent); color: #fff; border: none; cursor: pointer;
+    }
+    details { margin-bottom: 1rem; }
+    summary { cursor: pointer; font-weight: 600; margin-bottom: .5rem; }
+    table {
+      width: 100%; border-collapse: collapse; font-size: .85rem;
+    }
+    th, td {
+      padding: .4rem; border-bottom: 1px solid #ddd; text-align: left;
+    }
+    tr.done td {
+      text-decoration: line-through;
+      opacity: .5;
+    }
+    fieldset { border: none; padding: 0; margin: 0; }
+    @media(max-width:480px){
+      .card { flex: 1 1 120px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Plan de Viaje</h1>
+    <div id="countdown" class="count">Sin configuración</div>
+  </header>
+
+  <!-- RESUMEN PRINCIPAL -->
+  <section class="grid" id="mainSummary">
+    <div class="card"><h2>Presupuesto plan</h2><span id="sumBudget">$0</span></div>
+    <div class="card"><h2>Gastado real</h2><span id="sumSpent">$0</span></div>
+    <div class="card"><h2>Diferencia</h2><span id="sumDiff">$0</span></div>
+    <div class="card"><h2>Extra disponible</h2><span id="sumExtra">$0</span></div>
+  </section>
+  <section class="grid" id="dynamicCards"></section>
+
+  <!-- CONFIGURAR VIAJE -->
+  <details id="configBox" open>
+    <summary>🗓️ Configurar viaje</summary>
+    <fieldset>
+      <label>Fecha inicio</label>
+      <input type="date" id="tripStart">
+      <label>Fecha fin</label>
+      <input type="date" id="tripEnd">
+      <label>Fecha límite edición plan</label>
+      <input type="date" id="tripLock">
+      <label>Extra disponible inicial</label>
+      <input type="number" id="extraIni" step="0.01" placeholder="$">
+      <button type="button" onclick="saveTrip()">Guardar fechas</button>
+    </fieldset>
+  </details>
+
+  <!-- PLAN ACTIVIDADES -->
+  <details id="actBlock">
+    <summary>📅 Planificación de actividades</summary>
+    <table id="actTbl">
+      <thead><tr><th>Día</th><th>Inicio</th><th>Fin</th><th>Categoría</th><th>Descripción</th><th>✔︎</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <fieldset>
+      <select id="aDia"></select>
+      <input type="time" id="aIni">
+      <input type="time" id="aFin">
+      <select id="aCat"></select>
+      <input type="text" id="aTxt" placeholder="Descripción">
+      <button type="button" onclick="addAct()">Añadir actividad</button>
+    </fieldset>
+  </details>
+
+  <!-- PLAN GASTOS -->
+  <details id="planBlock">
+    <summary>💸 Planificación de gastos</summary>
+    <table id="planTbl">
+      <thead><tr><th>Tipo</th><th>Día</th><th>Categoría</th><th>Monto</th><th>Método</th><th>Banco</th><th>Real</th><th>✔︎</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <fieldset>
+      <select id="pTipo">
+        <option value="fijo">Fijo por día</option>
+        <option value="variable">Variable (todo viaje)</option>
+      </select>
+      <select id="pDia"></select>
+      <select id="pCat"></select>
+      <input type="number" id="pMonto" step="0.01" placeholder="$">
+      <select id="pPay">
+        <option value="Efectivo">Efectivo</option>
+        <option value="Debito">Débito</option>
+        <option value="Credito">Crédito</option>
+      </select>
+      <select id="pBank" style="display:none"></select>
+      <button type="button" onclick="addPlan()">Añadir plan</button>
+    </fieldset>
+  </details>
+
+  <!-- GASTO REAL -->
+  <details id="realBlock" open>
+    <summary>➕ Registrar gasto real</summary>
+    <fieldset>
+      <label>Fecha</label>
+      <input type="date" id="gDate">
+      <label>Categoría</label>
+      <select id="gCat"></select>
+      <label>Monto</label>
+      <input type="number" id="gAmount" step="0.01">
+      <label>Origen del gasto</label>
+      <select id="gOrigin">
+        <option value="planeado">Planeado</option>
+        <option value="extra">Extra</option>
+      </select>
+      <label>Método pago</label>
+      <select id="gPay">
+        <option value="Efectivo">Efectivo</option>
+        <option value="Debito">Débito</option>
+        <option value="Credito">Crédito</option>
+      </select>
+      <label id="gBankLbl" style="display:none">Banco</label>
+      <select id="gBank" style="display:none"></select>
+      <label id="motivoLbl" style="display:none">Motivo extra</label>
+      <input id="motivoTxt" style="display:none" placeholder="Descripción extra">
+      <button type="button" onclick="addGasto()">Guardar gasto</button>
+    </fieldset>
+  </details>
+
+  <!-- ACTIVIDADES Y GASTOS HOY -->
+  <section class="grid" id="todayBlock">
+    <div class="card"><h2>Actividades hoy</h2><ul id="todayAct"></ul></div>
+    <div class="card"><h2>Gastos hoy</h2><ul id="todayPlan"></ul></div>
+  </section>
+
+  <details><summary>🗒️ Gastos registrados</summary><ul id="lista"></ul></details>
+
+  <script>
+    /* CONSTANTES Y DATOS */
+    const BANKS = ["Pichincha","Pacifico","Internacional","Guayaquil","Produbanco","JEP","Policia","Austro","Bolivariano"];
+    const CATS = ["Buseta","Alquiler de carro","Hotel","GOLO","Entretenimiento","Comida","Aeropuerto","Snacks","Extras paseo","Transporte","Parqueo","Ropa","Propinas","Gasolina"];
+    const LS = "planViajeFullV5";
+    let data = JSON.parse(localStorage.getItem(LS) || '{"meta":{},"plan":[],"actividades":[],"gastos":[]}');
+    const fmt = n => '$'+(+n).toFixed(2);
+
+    function save(){ localStorage.setItem(LS, JSON.stringify(data)); }
+
+    /* POPULAR SELECTS */
+    CATS.forEach(c=>{
+      pCat.innerHTML += `<option>${c}</option>`;
+      gCat.innerHTML += `<option>${c}</option>`;
+      aCat.innerHTML += `<option>${c}</option>`;
+    });
+    BANKS.forEach(b=>{
+      pBank.innerHTML += `<option>${b}</option>`;
+      gBank.innerHTML += `<option>${b}</option>`;
+    });
+
+    /* DÍAS */
+    function rebuildDias(){
+      [aDia,pDia].forEach(sel=>{ sel.innerHTML = ""; });
+      if(data.meta.start && data.meta.end){
+        const s=new Date(data.meta.start),e=new Date(data.meta.end);
+        const n = Math.round((e-s)/86400000)+1;
+        for(let i=1;i<=n;i++){
+          aDia.innerHTML += `<option>${i}</option>`;
+          pDia.innerHTML += `<option>${i}</option>`;
+        }
+      }
+      pDia.innerHTML += '<option>Todos</option>';
+    }
+
+    /* GUARDAR FECHAS */
+    function saveTrip(){
+      data.meta.start = tripStart.value;
+      data.meta.end   = tripEnd.value;
+      data.meta.lock  = tripLock.value;
+      data.meta.extraIni = parseFloat(extraIni.value)||0;
+      data.meta.extra = data.meta.extraIni;
+      save(); rebuildDias(); renderUI(); tick();
+      configBox.open = false;
+    }
+
+    /* AGENDA */
+    function addAct(){
+      if(!aIni.value||!aTxt.value.trim()){ alert('Hora y descripción.'); return; }
+      data.actividades.push({
+        id:crypto.randomUUID(),
+        dia:+aDia.value, ini:aIni.value, fin:aFin.value,
+        cat:aCat.value, txt:aTxt.value.trim(), done:false
+      });
+      save(); renderActTable();
+      aIni.value='';aFin.value='';aTxt.value='';
+    }
+    function toggleAct(id){
+      const a=data.actividades.find(x=>x.id===id);
+      if(a){ a.done = !a.done; save(); renderActTable(); }
+    }
+    function renderActTable(){
+      actTbl.tBodies[0].innerHTML = "";
+      data.actividades
+        .filter(a => !a.done)
+        .sort((a,b)=>a.dia-b.dia||a.ini.localeCompare(b.ini))
+        .forEach(a=>{
+          actTbl.tBodies[0].innerHTML += `
+            <tr>
+              <td>${a.dia}</td><td>${a.ini}</td><td>${a.fin||''}</td>
+              <td>${a.cat}</td><td>${a.txt}</td>
+              <td><input type="checkbox" onclick="toggleAct('${a.id}'); renderToday();" /></td>
+            </tr>`;
+        });
+    }
+
+    /* PLAN DE GASTOS */
+    pPay.onchange = ()=> pBank.style.display = pPay.value==="Credito"?'block':'none';
+    gPay.onchange = ()=>{
+      const show = gPay.value==="Credito";
+      gBankLbl.style.display = gBank.style.display = show?'block':'none';
+    };
+
+    function addPlan(){
+      const tipo=pTipo.value, dia=pDia.value, cat=pCat.value,
+            monto=parseFloat(pMonto.value)||0,
+            pay=pPay.value, bank = pay==="Credito"?pBank.value:"",
+            done=false, real=0;
+      if(!monto){ alert('Monto requerido'); return; }
+      if(tipo==="fijo"&&(dia==="Todos")){ alert('Elige día'); return; }
+      if(tipo==="variable"&&(dia!=="Todos")){ alert('Para variable usa "Todos"'); return; }
+      data.plan.push({ id:crypto.randomUUID(),tipo,dia,cat,monto,metodo:pay,banco:bank,real,done });
+      save(); renderPlanTable(); updateSummary(); pMonto.value='';
+    }
+    function togglePlan(id){
+      const p = data.plan.find(x=>x.id===id);
+      if(p){ p.done = !p.done; save(); renderPlanTable(); updateSummary(); }
+    }
+    function registrarReal(id,val){
+      const p = data.plan.find(x=>x.id===id);
+      if(p){ p.real = parseFloat(val)||0; p.done=true; save(); renderPlanTable(); updateSummary(); }
+    }
+    function renderPlanTable(){
+      planTbl.tBodies[0].innerHTML = "";
+      data.plan.filter(p=>!p.done).forEach(p=>{
+        planTbl.tBodies[0].innerHTML += `
+          <tr>
+            <td>${p.tipo}</td><td>${p.dia}</td><td>${p.cat}</td><td>${fmt(p.monto)}</td>
+            <td>${p.metodo}</td><td>${p.banco||'-'}</td>
+            <td><input type="number" step="0.01" value="${p.real||''}"
+                       oninput="registrarReal('${p.id}',this.value)" /></td>
+            <td><input type="checkbox" onclick="togglePlan('${p.id}'); renderToday();" /></td>
+          </tr>`;
+      });
+    }
+
+    /* GASTO REAL */
+    function addGasto(){
+      if(!gDate.value||!gAmount.value){ alert('Fecha y monto.'); return; }
+      const origin = gOrigin.value, cat=gCat.value,
+            monto=+gAmount.value, pay=gPay.value,
+            bank=pay==="Credito"?gBank.value:"",
+            mot = motivoTxt.value.trim();
+      data.gastos.push({ fecha:gDate.value,cat,monto,metodo:pay,banco:bank,extra:(origin==="extra"),motivo:mot });
+      save(); renderList(); updateSummary(); gAmount.value=''; motivoTxt.value='';
+    }
+    function renderList(){
+      lista.innerHTML = "";
+      data.gastos.forEach(g=>{
+        lista.innerHTML += `<li>${g.fecha} • ${g.cat} • ${fmt(g.monto)} • ${g.metodo}${g.banco?'-'+g.banco:''}${g.extra?' • extra':''}</li>`;
+      });
+    }
+
+    /* RESUMEN */
+    function updateSummary(){
+      /* totales */
+      const planTotal = data.plan.reduce((s,p)=>s+p.monto,0),
+            realTotal = data.gastos.filter(g=>!g.extra).reduce((s,g)=>s+g.monto,0);
+      sumBudget.textContent = fmt(planTotal);
+      sumSpent.textContent  = fmt(realTotal);
+      sumDiff.textContent   = fmt(planTotal - realTotal);
+
+      /* bancos dinámicos */
+      const stat = {}, cards = dynamicCards;
+      BANKS.forEach(b=> stat[b] = {plan:0,real:0,rPlan:0,rReal:0});
+      data.plan.forEach(p=>{
+        if(p.metodo==="Credito") { stat[p.banco].plan += p.monto;
+          if(p.cat==="Ropa") stat[p.banco].rPlan += p.monto;
+        }
+      });
+      data.gastos.filter(g=>!g.extra).forEach(g=>{
+        if(g.metodo==="Credito") { stat[g.banco].real += g.monto;
+          if(g.cat==="Ropa") stat[g.banco].rReal += g.monto;
+        }
+      });
+
+      /* reconstruir tarjetas */
+      cards.innerHTML = "";
+      BANKS.forEach(b=>{
+        const s=stat[b];
+        if(s.plan||s.real){
+          cards.innerHTML += `<div class="card"><h2>${b} Total</h2><span>${fmt(s.plan - s.real)}</span></div>`;
+          if(s.rPlan||s.rReal){
+            cards.innerHTML += `<div class="card"><h2>${b} Ropa</h2><span>${fmt(s.rPlan - s.rReal)}</span></div>`;
+          }
+        }
+      });
+
+      /* pools */
+      const poolSum = cat => ({
+        plan: data.plan.filter(p=>p.tipo==="variable"&&p.cat===cat).reduce((s,p)=>s+p.monto,0),
+        real: data.gastos.filter(g=>g.cat===cat&& !g.extra).reduce((s,g)=>s+g.monto,0)
+      });
+      const G=poolSum("Gasolina"), P=poolSum("Propinas");
+      cards.innerHTML += `<div class="card"><h2>Gasolina saldo</h2><span>${fmt(G.plan-G.real)}</span></div>`;
+      cards.innerHTML += `<div class="card"><h2>Propinas saldo</h2><span>${fmt(P.plan-P.real)}</span></div>`;
+
+      /* variación plan solo hechos */
+      const delta = data.plan.filter(p=>p.done).reduce((s,p)=>s + (p.real - p.monto),0);
+      cards.innerHTML += `<div class="card"><h2>Variación plan</h2><span>${fmt(delta)}</span></div>`;
+
+      /* extra inicial + no ejecutados */
+      let extra = data.meta.extra || 0;
+      const hoy = new Date().toISOString().slice(0,10), start = new Date(data.meta.start);
+      data.plan.forEach(p=>{
+        if(!p.done && p.tipo==="fijo"){
+          const planDay = +p.dia;
+          const fechaPlan = new Date(start.getTime() + (planDay-1)*86400000)
+                                .toISOString().slice(0,10);
+          if(fechaPlan < hoy){
+            p.done = true; extra += p.monto;
+          }
+        }
+      });
+      data.meta.extra = extra;
+      sumExtra.textContent = fmt(extra);
+
+      save();
+      renderToday();
+    }
+
+    /* ACTIVIDADES & GASTOS HOY */
+    function renderToday(){
+      const hoy = new Date().toISOString().slice(0,10),
+            start = new Date(data.meta.start),
+            diaNum = Math.round((new Date(hoy) - start)/86400000)+1;
+
+      // actividades
+      const aList = data.actividades
+        .filter(a=>a.dia===diaNum && !a.done)
+        .sort((a,b)=>a.ini.localeCompare(b.ini))
+        .map(a=>`<li><input type="checkbox" onclick="toggleAct('${a.id}'); renderActTable(); updateSummary();" /> ${a.ini}${a.fin?`–${a.fin}`:''} • ${a.cat} • ${a.txt}</li>`)
+        .join('');
+      todayAct.innerHTML = aList||'<li>(ninguna)</li>';
+
+      // gastos fijos
+      const pList = data.plan
+        .filter(p=>p.tipo==="fijo"&&+p.dia===diaNum&&!p.done)
+        .map(p=>`<li><input type="checkbox" onclick="togglePlan('${p.id}'); renderPlanTable(); updateSummary();" /> ${p.cat} • ${fmt(p.monto)}</li>`)
+        .join('');
+      todayPlan.innerHTML = pList||'<li>(ninguno)</li>';
+    }
+
+    /* CUENTA REGRESIVA */
+    function tick(){
+      if(!data.meta.start) return;
+      const diff = new Date(data.meta.start) - new Date(),
+            el = countdown;
+      if(diff <= 0){ el.textContent = '¡Viaje en curso!'; return; }
+      const d = Math.floor(diff/86400000), h = Math.floor(diff%86400000/3600000),
+            m = Math.floor(diff%3600000/60000), s = Math.floor(diff%60000/1000);
+      el.textContent = `${d}d ${h}h ${m}m ${s}s`;
+    }
+
+    function renderUI(){
+      rebuildDias();
+      renderActTable();
+      renderPlanTable();
+      renderList();
+      updateSummary();
+      // bloquear tras fecha límite
+      if(data.meta.lock && new Date() > new Date(data.meta.lock)){
+        document.querySelectorAll('#planBlock input,#planBlock select,#planBlock button,#actBlock input,#actBlock select,#actBlock button')
+          .forEach(el=>el.disabled=true);
+      }
+    }
+
+    /* INICIALIZAR */
+    renderUI(); tick(); setInterval(tick,1000);
+  </script>
+</body>
+</html>
